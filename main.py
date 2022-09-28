@@ -1,10 +1,14 @@
-from livewires import games, color
 import math
 import pygame
 from pygame.locals import * # print
 import random
 import time
-games.init(screen_width = 1080, screen_height = 600, fps = 60)
+
+screen_width = 1080
+screen_height = 600
+fps = 60
+
+screen = pygame.display.set_mode((screen_width, screen_height))
 ability1overlay = pygame.Surface((56, 56))
 ability2overlay = pygame.Surface((56, 56))
 health = pygame.Surface((204, 24))
@@ -12,18 +16,17 @@ ability1overlay.set_alpha(100)
 ability2overlay.set_alpha(100)
 ability1overlay.set_colorkey((255,255,255))
 ability2overlay.set_colorkey((255,255,255))
-drawing = pygame.Surface((1080, 600))
 # Map info
-MAP = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-      ,[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
-      ,[1,0,0,0,0,0,0,0,0,0,1,1,1,0,1]
-      ,[1,0,0,0,1,1,0,0,0,0,1,1,1,0,1]
-      ,[1,0,0,0,1,1,0,0,0,0,0,0,0,0,1]
-      ,[1,0,0,0,1,1,0,0,0,0,0,0,0,0,1]
-      ,[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
-      ,[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
-      ,[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]
- 
+MAP = [[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+      ,[2,0,0,0,0,0,0,0,0,0,0,0,0,0,2]
+      ,[2,0,0,0,0,0,0,0,0,0,2,2,2,0,2]
+      ,[2,0,0,0,2,2,0,0,0,0,2,2,2,0,2]
+      ,[2,0,0,0,2,2,0,0,0,0,0,0,0,0,2]
+      ,[2,0,0,0,2,2,0,0,0,0,0,0,0,0,2]
+      ,[2,0,0,0,0,0,0,0,0,0,0,0,0,0,2]
+      ,[2,0,0,0,0,0,0,0,0,0,0,0,0,0,2]
+      ,[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]]
+
  
 def update_rainbow(rainbow, rainbow_pos):
    """ Updates rainbow and brings it through the different fades between Red, Green, and Blue """
@@ -246,8 +249,38 @@ def entity_calcs(xpos,ypos, playerang, playerx, playery):
       visible = False
    return visible, angle_offset, distance
  
-class Shot(games.Sprite):
-   image = games.load_image("shot.bmp")
+class Sprite():
+   sprites = []
+   
+   def __init__(self, image=None, x=0, y=0, right=None, bottom=None):
+      self.image = image
+      
+      self.x = x
+      self.y = y
+      
+      if right:
+         self.x = right-image.get_width()
+      if bottom:
+         self.y = bottom-image.get_height()
+      
+      Sprite.sprites.append(self)
+   
+   def destroy(self):
+      Sprite.sprites.remove(self)
+   
+   def update(self):
+      pass
+   
+   @staticmethod  
+   def update_all():
+      for sprite in Sprite.sprites:
+         sprite.update()
+   
+
+ 
+class Shot(Sprite):
+   image = pygame.image.load("shot.png")
+   image.set_colorkey((255,255,255))
    Hproportion = 5000 # Proportion for height of shot
    Wproportion = Hproportion # Proportion of width of shot
    imagesize = 56
@@ -272,7 +305,7 @@ class Shot(games.Sprite):
       # if visible find its position on screen, width, and height
       if self.visible:
          self.renderx = (self.angle_offset/Player.FOV) * 1080 # x position on screen
-         self.rendery = games.screen.height // 2
+         self.rendery = screen_height // 2
          self.myheight = int(Shot.Hproportion//self.distance)
          self.mywidth = int(Shot.Wproportion//self.distance)
          self.image = pygame.transform.scale(Shot.image, (self.mywidth, self.myheight)) # height of alien on screen
@@ -294,11 +327,14 @@ class Shot(games.Sprite):
          Game.entities.remove(self)
    def draw(self):
       if self.visible:
-         drawing.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
+         screen.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
 
-class Alien(games.Sprite):
-   image = games.load_image("Alien.bmp")
-   Hproportion = 200000 # Proportion for height of alien
+
+
+class Alien(Sprite):
+   image = pygame.image.load("Alien.png").convert_alpha()
+   image.set_colorkey((255,0,0))
+   Hproportion = 180000 # Proportion for height of alien
    Wproportion = Hproportion * 5/9 # Proportion of width of alien
    speed = 5
    def __init__(self, movements):
@@ -323,7 +359,7 @@ class Alien(games.Sprite):
       # Getting x and y offsets, then preventing them from being 0
       self.visible, self.angle_offset, self.distance = entity_calcs(self.xpos, self.ypos, playerang, playerx, playery)
      
-      for play in games.screen.get_all_objects():
+      for play in Sprite.sprites:
             try:
                play.playercheck
                player = play
@@ -349,11 +385,13 @@ class Alien(games.Sprite):
       # if visible find its position on screen, width, and height
       if self.visible:
          self.renderx = (self.angle_offset/Player.FOV) * 1080 # x position on screen
-         self.rendery = games.screen.height // 2
+         self.rendery = screen_height // 2
          self.myheight = int(Alien.Hproportion//self.distance)
          self.mywidth = int(Alien.Wproportion//self.distance)
      
          self.image = pygame.transform.scale(Alien.image, (self.mywidth, self.myheight)) # height of alien on screen
+         self.image.set_colorkey((255,0,0))
+
  
    def move(self, player):
       if check_border(self.xpos + self.dx, self.ypos + self.dy, self.HB, Draw.BLOCK_SIZE):
@@ -399,16 +437,14 @@ class Alien(games.Sprite):
  
    def draw(self):
       if self.visible:
-         drawing.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
+         screen.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
  
    def aliencheck(self):
       pass
- 
- 
- 
- 
-class Smoker(games.Sprite):
-   image = games.load_image("SmokerEnt.bmp")
+
+class Smoker(Sprite):
+   image = pygame.image.load("SmokerEnt.png")
+   image.set_colorkey((127,127,127))
    Hproportion = 20000 # Proportion for height
    Wproportion = Hproportion * 5/9 # Proportion of width to height
    Height_proportion = 75000 # for smokers z value relative to wall, value is equal to half the wall proporiton
@@ -476,13 +512,13 @@ class Smoker(games.Sprite):
       # if visible find its position on screen, width, and height
       if self.visible:
          self.renderx = (self.angle_offset/Player.FOV) * 1080 # x position on screen
-         self.rendery = games.screen.height // 2 - (((self.Height_proportion/self.distance)/100)*self.zpos)
+         self.rendery = screen_height // 2 - (((self.Height_proportion/self.distance)/100)*self.zpos)
          self.myheight = int(Smoker.Hproportion//self.distance)
          self.mywidth = int(Smoker.Wproportion//self.distance)
-         self.image = pygame.transform.scale(Smoker.image, (self.mywidth, self.myheight)) # Scale of alien on screen
+         self.image = pygame.transform.scale(Smoker.image, (self.mywidth, self.myheight)) # Scale of  on screen
    def draw(self):
       if self.visible:
-         drawing.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
+         screen.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
    def wallbounce(self):
       if MAP[int((self.ypos + 2 * self.dy)//200)][int((self.xpos)//200)]:
          self.dy = -self.dy
@@ -490,9 +526,10 @@ class Smoker(games.Sprite):
       if MAP[int((self.ypos)//200)][int((self.xpos + 2 * self.dx)//200)]:
          self.dx = -self.dx
          self.ypos += self.dy
- 
-class Grenade(games.Sprite):
-   image = games.load_image("GrenEnt.bmp")
+
+class Grenade(Sprite):
+   image = pygame.image.load("GrenEnt.png")
+   image.set_colorkey((255,255,255))
    Hproportion = 20000 # Proportion for heigh
    Wproportion = Hproportion * 5/9 # Proportion of width to height
    Height_proportion = 75000 # for grendades z value relative to wall, value is equal to half the wall proporiton
@@ -547,13 +584,13 @@ class Grenade(games.Sprite):
       # if visible find its position on screen, width, and height
       if self.visible:
          self.renderx = (self.angle_offset/Player.FOV) * 1080 # x position on screen
-         self.rendery = games.screen.height // 2 - (((self.Height_proportion/self.distance)/100)*self.zpos)
+         self.rendery = screen_height // 2 - (((self.Height_proportion/self.distance)/100)*self.zpos)
          self.myheight = int(Grenade.Hproportion//self.distance)
          self.mywidth = int(Grenade.Wproportion//self.distance)
-         self.image = pygame.transform.scale(Grenade.image, (self.mywidth, self.myheight)) # Scale of alien on screen
+         self.image = pygame.transform.scale(Grenade.image, (self.mywidth, self.myheight)) # Scale of  on screen
    def draw(self):
       if self.visible:
-         drawing.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
+         screen.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
    def wallbounce(self):
       if MAP[int((self.ypos + 2 * self.dy)//200)][int((self.xpos)//200)]:
          self.dy = -self.dy
@@ -561,13 +598,14 @@ class Grenade(games.Sprite):
       if MAP[int((self.ypos)//200)][int((self.xpos + 2 * self.dx)//200)]:
          self.dx = -self.dx
          self.ypos += self.dy
-class Smoke(games.Sprite):
-   image = games.load_image("smoke.bmp", True)
+
+class Smoke(Sprite):
+   image = pygame.image.load("smoke.png")
+   image.set_colorkey((255,255,255))
    Height_proportion = 75000 # proportion of ofset y value for explosions z value
  
    def __init__(self, size, life, x, y, z, up, spread):# Size of explosition and how long it lasts
      super(Smoke, self).__init__(image = Smoke.image, right = -1, bottom = -1)
-   
      self.xpos = x
      self.ypos = y
      self.zpos = z
@@ -580,6 +618,7 @@ class Smoke(games.Sprite):
    
      self.dx = random.randrange(-self.spread_radius, self.spread_radius)
      self.dy = random.randrange(-self.spread_radius, self.spread_radius)
+   
    def get_updated(self, playerx, playery, playerang):
       if check_border(self.xpos + self.dx, self.ypos, 1, Draw.BLOCK_SIZE):
          self.xpos += self.dx
@@ -598,22 +637,24 @@ class Smoke(games.Sprite):
       if self.life_time < 0:
          Game.entities.remove(self)
          self.destroy()
+   
    def find_render(self):
       # if visible find its position on screen, width, and height
       if self.visible:
          self.renderx = (self.angle_offset/Player.FOV) * 1080 # x position on screen
-         self.rendery = games.screen.height // 2 - (((self.Height_proportion/self.distance)/100)*self.zpos)
+         self.rendery = screen_height // 2 - (((self.Height_proportion/self.distance)/100)*self.zpos)
          self.myheight = int(self.proportion//self.distance)
          self.mywidth = self.myheight
      
-         self.image = pygame.transform.scale(Smoke.image, (self.mywidth, self.myheight)) # Scale of alien on screen
+         self.image = pygame.transform.scale(Smoke.image, (self.mywidth, self.myheight)) # Scale of  on screen
    def draw(self):
       if self.visible:
-         drawing.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
+         screen.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
      
 
-class Explosion(games.Sprite):
-   image = games.load_image("explosion.bmp", True)
+class Explosion(Sprite):
+   image = pygame.image.load("explosion.png")
+   image.set_colorkey((255,255,255))
    Height_proportion = 75000 # proportion of ofset y value for explosions z value
  
    def __init__(self, size, life, x, y, z):# Size of explosition and how long it lasts
@@ -643,14 +684,10 @@ class Explosion(games.Sprite):
       if self.life_time < 0:
          Game.entities.remove(self)
          self.destroy()
-     
-     
-     
-   
    def check_entity_damage(self):
       for entity in Game.entities:
          try:
-            entity.aliencheck()
+            entity.check()
             if self.xpos <= entity.xpos + self.explosion_size and self.xpos >= entity.xpos - self.explosion_size and self.ypos >= entity.ypos - self.explosion_size and self.ypos <= entity.ypos + self.explosion_size:
                entity.destroy()
                Game.entities.remove(entity)
@@ -661,18 +698,15 @@ class Explosion(games.Sprite):
       # if visible find its position on screen, width, and height
       if self.visible:
          self.renderx = (self.angle_offset/Player.FOV) * 1080 # x position on screen
-         self.rendery = games.screen.height // 2 - (((self.Height_proportion/self.distance)/100)*self.zpos)
+         self.rendery = screen_height // 2 - (((self.Height_proportion/self.distance)/100)*self.zpos)
          self.myheight = int(self.proportion//self.distance * self.percentsize)
          self.mywidth = self.myheight
      
-         self.image = pygame.transform.scale(Explosion.image, (self.mywidth, self.myheight)) # Scale of alien on screen
+         self.image = pygame.transform.scale(Explosion.image, (self.mywidth, self.myheight)) # Scale of  on screen
    def draw(self):
       if self.visible:
-         drawing.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
+         screen.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
      
-     
-   
- 
 class Game():
    bulletspeed = 50
    grenspeed = 20
@@ -684,18 +718,28 @@ class Game():
  
    entities = [Alien(((700,500), (1300,500),(1300,1300), (700, 1300))), Alien(((1900, 300),(2700, 300),(2700, 900),(1900, 900))), Alien("pathfind")] # Enemies and other things
  
+class Inputs():
+   keys = []
+   mouse_buttons = []
+   mouse_position = []
    
+   @staticmethod
+   def update():
+      Inputs.keys = pygame.key.get_pressed()
+      Inputs.mouse_buttons = pygame.mouse.get_pressed()
+      Inputs.mouse_position = pygame.mouse.get_pos()
+ 
 
-class Player(games.Sprite):
+class Player(Sprite):
    """ Player. Movement and GUI """
-   ability2image = games.load_image("smoker.bmp", transparent = False)
-   handimage = games.load_image("gunhand.png", transparent = True)
+   handimage = pygame.image.load("gunhand.png")
+   handimage.set_colorkey((255,255,255))
    FOV = 60 # Angle for the cast of rays
  
    def __init__(self):
-      super(Player, self).__init__(image = Player.handimage, right = games.screen.width - 50, bottom = games.screen.height + 10)
+      super(Player, self).__init__(image = Player.handimage, right = screen_width - 50, bottom = screen_height + 10)
  
-      self.lastmouseposition = (games.screen.width // 2, games.screen.height // 2)
+      self.lastmouseposition = (screen_width // 2, screen_height // 2)
  
       self.BLOCK_SIZE = 200
  
@@ -738,24 +782,25 @@ class Player(games.Sprite):
  
       if self.health < 1:
          self.die()
+      screen.blit(Player.handimage, (self.x, self.y))
  
    def inputs(self):
-      self.keys = pygame.key.get_pressed()
-      if self.keys[pygame.K_e]:
+      if Inputs.keys[pygame.K_e]:
          if not self.ability1cooldown:
             self.ability1cooldown = self.ability1maxcool
             self.throwGren()
-      if self.keys[pygame.K_r]:
+      if Inputs.keys[pygame.K_r]:
          if not self.ability2cooldown:
             self.ability2cooldown = self.ability1maxcool
             self.throwSmoke()
-      if games.mouse.is_pressed(0):
+      if Inputs.mouse_buttons[0]:
          if not self.shotcool:
             self.shotcool = self.shotmaxcool
             self.shoot()
    
-      if self.keys[pygame.K_SPACE]:
-         self.health -= 1
+      # For health testing
+      # if Inputs.keys[pygame.K_SPACE]:
+      #    self.health -= 1
    
  
    def cooldowns(self):
@@ -771,28 +816,28 @@ class Player(games.Sprite):
       self.healthSurf.fill((0,0,0))
       if self.health > 0:
          pygame.draw.rect(self.healthSurf, (255,0,0), (2, 2, self.healthpix, 20), 0)
-      games.screen.blit_and_dirty(self.healthSurf, (games.screen.width//2 - 102, games.screen.height - 40))
+      screen.blit(self.healthSurf, (screen_width//2 - 102, screen_height - 40))
  
    def movement(self):
         self.x_1 = self.xpos
         self.y_1 = self.ypos
-        if self.keys[pygame.K_w]: # Going forward
-           if self.keys[pygame.K_LSHIFT]: # If sprinting
+        if Inputs.keys[pygame.K_w]: # Going forward
+           if Inputs.keys[pygame.K_LSHIFT]: # If sprinting
               self.x_1 += self.sprint * math.cos(math.radians(int((self.ang+(Player.FOV/2))%360)))
               self.y_1 += self.sprint * math.sin(math.radians(int((self.ang+(Player.FOV/2))%360)))
            else:                  # If walking
               self.x_1 += self.walk * math.cos(math.radians(int((self.ang+(Player.FOV/2))%360)))
               self.y_1 += self.walk * math.sin(math.radians(int((self.ang+(Player.FOV/2))%360)))
            self.move = True
-        if self.keys[pygame.K_a]: # To the left
+        if Inputs.keys[pygame.K_a]: # To the left
            self.x_1 += self.walk * math.cos(math.radians(int((self.ang+(Player.FOV/2)-90)%360)))
            self.y_1 += self.walk * math.sin(math.radians(int((self.ang+(Player.FOV/2)-90)%360)))
            self.move = True
-        if self.keys[pygame.K_d]: # To the right
+        if Inputs.keys[pygame.K_d]: # To the right
            self.x_1 += self.walk * math.cos(math.radians(int((self.ang+(Player.FOV/2)+90)%360)))
            self.y_1 += self.walk * math.sin(math.radians(int((self.ang+(Player.FOV/2)+90)%360)))
            self.move = True
-        if self.keys[pygame.K_s]: # Backwards
+        if Inputs.keys[pygame.K_s]: # Backwards
            self.x_1 += self.walk * math.cos(math.radians(int((self.ang+(Player.FOV/2)+180)%360)))
            self.y_1 += self.walk * math.sin(math.radians(int((self.ang+(Player.FOV/2)+180)%360)))
            self.move = True
@@ -802,15 +847,15 @@ class Player(games.Sprite):
               self.xpos = self.x_1
            if check_border(self.xpos, self.y_1, self.HB, self.BLOCK_SIZE):
               self.ypos = self.y_1
-           move = False
+           self.move = False
  
    def turn(self):
-      self.ang -= (self.lastmouseposition[0] - games.mouse.position[0]) / 10
-      if games.mouse.position[0] > games.screen.width - 100 or games.mouse.position[0] < 100:
-         games.mouse.position = (games.screen.width // 2, games.screen.height // 2)
-         self.lastmouseposition = (games.screen.width // 2, games.screen.height // 2)
+      self.ang -= (self.lastmouseposition[0] - Inputs.mouse_position[0]) / 10
+      if Inputs.mouse_position[0] > screen_width - 100 or Inputs.mouse_position[0] < 100:
+         pygame.mouse.set_pos((screen_width // 2, screen_height // 2))
+         self.lastmouseposition = (screen_width // 2, screen_height // 2)
       else:
-         self.lastmouseposition = games.mouse.position
+         self.lastmouseposition = Inputs.mouse_position
       if self.ang >= 360: # Keeping angle within 360 degrees
          self.ang -= 360
       if self.ang < 0:
@@ -818,16 +863,16 @@ class Player(games.Sprite):
       # self.ang = round(self.ang)
    def die(self):
       Game.entities = []
-      for object in games.screen.get_all_objects():
+      for object in Sprite.sprites:
          try:
             object.playercheck()
          except:
             object.destroy()
-            drawing.fill((0,0,0))
-            games.screen.blit_and_dirty(drawing, (0,0))
-      games.screen.add(games.Text(value = "You Died!", size = 50, color = (255,0,0), x = games.screen.width // 2, y = games.screen.height // 2-50))
+            screen.fill((0,0,0))
+            screen.blit(screen, (0,0))
+      #games.screen.add(games.Text(value = "You Died!", size = 50, color = (255,0,0), x = screen_width // 2, y = screen_height // 2-50))
       self.text2 = "You blasted " + str(Game.kills) + " aliens."
-      games.screen.add(games.Text(value = self.text2, size = 50, color = (255,255,255), x = games.screen.width // 2, y = games.screen.height // 2))
+      #games.screen.add(games.Text(value = self.text2, size = 50, color = (255,255,255), x = screen_width // 2, y = screen_height // 2))
          
      
    def shoot(self):
@@ -853,44 +898,44 @@ class Player(games.Sprite):
    
      
  
-class GrenGui(games.Sprite):
-   image = games.load_image("grenade.bmp", transparent = False)
+class GrenGui(Sprite):
+   image = pygame.image.load("grenade.png")
    imagesize = 56
    color = (0,0,0)
    def __init__(self):
       super(GrenGui, self).__init__(image = GrenGui.image, right = -1 , bottom = -1)
       self.ability1overlay = pygame.Surface((GrenGui.imagesize, GrenGui.imagesize))
    def update(self):
-      for play in games.screen.get_all_objects():
+      for play in Sprite.sprites:
          try:
             play.playercheck
             player = play
          except:
             pass
-      self.ability1overlay.blit(self._surface, (0,0))
+      self.ability1overlay.blit(self.image, (0,0))
       self.overheight = round(player.ability1cooldown / player.ability1maxcool * GrenGui.imagesize)
       if self.overheight:
          pygame.draw.rect(self.ability1overlay, GrenGui.color, (0, GrenGui.imagesize - self.overheight, GrenGui.imagesize, self.overheight), 0)
-      games.screen.blit_and_dirty(self.ability1overlay, (10, games.screen.height // 2 - GrenGui.imagesize - 10))
-class SmokeGui(games.Sprite):
-   image = games.load_image("smoker.bmp", transparent = False)
+      screen.blit(self.ability1overlay, (10, screen_height // 2 - GrenGui.imagesize - 10))
+class SmokeGui(Sprite):
+   image = pygame.image.load("smoker.png")
    imagesize = 56
    color = (0,0,0)
    def __init__(self):
       super(SmokeGui, self).__init__(image = SmokeGui.image, right = -1, bottom = -1)
       self.ability2overlay = pygame.Surface((SmokeGui.imagesize, SmokeGui.imagesize))
    def update(self):
-      for play in games.screen.get_all_objects():
+      for play in Sprite.sprites:
          try:
             play.playercheck
             player = play
          except:
             pass
-      self.ability2overlay.blit(self._surface, (0,0))
+      self.ability2overlay.blit(self.image, (0,0))
       self.overheight = round(player.ability2cooldown / player.ability2maxcool * SmokeGui.imagesize)
       if self.overheight:
          pygame.draw.rect(self.ability2overlay, SmokeGui.color, (0, SmokeGui.imagesize - self.overheight, SmokeGui.imagesize, self.overheight), 0)
-      games.screen.blit_and_dirty(self.ability2overlay, (10, games.screen.height // 2 + 10))    
+      screen.blit(self.ability2overlay, (10, screen_height // 2 + 10))    
      
    
 class Ray():
@@ -901,10 +946,11 @@ class Ray():
       self.color = (0,0,0)
       self.visible = True
    def draw(self):
-      pygame.draw.rect(drawing, self.color, (self.column, (games.screen.height//2)-((Draw.PROPORTION/self.distance)//2), self.width, Draw.PROPORTION/self.distance), 0)
+      pygame.draw.rect(screen, self.color, (self.column, (screen_height//2)-((Draw.PROPORTION/self.distance)//2), self.width, Draw.PROPORTION/self.distance), 0)
      
-class Draw(games.Sprite):
-   image = games.load_image("crosshair.bmp")
+class Draw(Sprite):
+   image = pygame.image.load("crosshair.png")
+   image.set_colorkey((255,255,255))
    # Colors
    red = (255, 0, 0)
    blue = (0, 0, 255)
@@ -919,7 +965,7 @@ class Draw(games.Sprite):
    SHADING = 4000 # Darkening of walls at distances
    PIX_PER_RAY = 3 # How many pixels for each ray, more means less lag
    def __init__(self):
-      super(Draw, self).__init__(image = Draw.image, x = games.screen.width // 2, y = games.screen.height // 2)
+      super(Draw, self).__init__(image = Draw.image, x = screen_width // 2, y = screen_height // 2)
       self.rainbow = [255, 0, 0]
       self.rainbow_pos = 0 # Point in rainbow's color
 
@@ -932,20 +978,20 @@ class Draw(games.Sprite):
          self.rays.append(Ray(self.column, self.wide))
    
    def update(self):
-      for play in games.screen.get_all_objects():
+      for play in Sprite.sprites:
          try:
             play.playercheck
             player = play
          except:
             pass
  
-      drawing.fill((0,0,0))
-      for j in range(games.screen.height//2): # Drawing roof and floor
-         self.color = 130-(j*(130/(games.screen.height//2)))
-         # pygame.draw.line(drawing, (self.color, self.color, self.color), (0, j), (games.screen.width, j), 1)
-         pygame.draw.line(drawing, (self.color, self.color, self.color), (0, games.screen.height-j), (games.screen.width, games.screen.height-j), 1)
-      for j in range(games.screen.width//Draw.PIX_PER_RAY): # Drawing rays
-         self.ray_angle = player.ang +((Player.FOV/(games.screen.width//Draw.PIX_PER_RAY))*j) # Angle of current ray
+      screen.fill((0,0,0))
+      for j in range(screen_height//2): # Drawing roof and floor
+         self.color = 130-(j*(130/(screen_height//2)))
+         # pygame.draw.line(screen, (self.color, self.color, self.color), (0, j), (screen_width, j), 1)
+         pygame.draw.line(screen, (self.color, self.color, self.color), (0, screen_height-j), (screen_width, screen_height-j), 1)
+      for j in range(screen_width//Draw.PIX_PER_RAY): # Drawing rays
+         self.ray_angle = player.ang +((Player.FOV/(screen_width//Draw.PIX_PER_RAY))*j) # Angle of current ray
          self.angle_offset = abs((Player.FOV/2 + player.ang) - self.ray_angle)# Diffrence in angle from center of screen
          self.angle_offset = round(self.angle_offset, 10)
          self.ray_angle = round(self.ray_angle, 10)
@@ -978,19 +1024,35 @@ class Draw(games.Sprite):
       for object in self.order:
          object.draw()
       self.rainbow, self.rainbow_pos = update_rainbow(self.rainbow, self.rainbow_pos)
-      games.screen.blit_and_dirty(drawing, (0,0))
+      screen.blit(Draw.image, (self.x,self.y))
      
-def main():
-   player = Player()
+def main():   
    draw = Draw()
-   games.screen.add(draw)
-   games.screen.add(player)
+   player = Player()
+   
+   
    grenadegui = GrenGui()
-   games.screen.add(grenadegui)
    smokergui = SmokeGui()
-   games.screen.add(smokergui)
  
-   games.mouse.is_visible = False
-   games.screen.event_grab = True
-   games.screen.mainloop()
+   pygame.mouse.set_visible(True)
+   pygame.event.set_grab(True)
+   Inputs.update()
+   while (True):
+      # Loop over pygame events
+      for event in pygame.event.get():
+         # If the screen should quit, quit.
+         if event.type == QUIT or Inputs.keys[pygame.K_ESCAPE]:
+            pygame.quit()
+            exit()
+      
+      Inputs.update()
+      Sprite.update_all()
+      
+      screen.blit(screen, (0,0))
+      
+      pygame.display.update()
+      
+      
+
+   
 main()
