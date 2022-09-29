@@ -853,7 +853,7 @@ class Player(Sprite):
       self.ang -= (self.lastmouseposition[0] - Inputs.mouse_position[0]) / 10
       if Inputs.mouse_position[0] > screen_width - 100 or Inputs.mouse_position[0] < 100:
          pygame.mouse.set_pos((screen_width // 2, screen_height // 2))
-         self.lastmouseposition = (screen_width // 2, screen_height // 2)
+         self.lastmouseposition = pygame.mouse.get_pos()
       else:
          self.lastmouseposition = Inputs.mouse_position
       if self.ang >= 360: # Keeping angle within 360 degrees
@@ -1034,8 +1034,9 @@ def main():
    grenadegui = GrenGui()
    smokergui = SmokeGui()
  
-   pygame.mouse.set_visible(True)
    pygame.event.set_grab(True)
+   pygame.mouse.set_visible(False)
+   
    Inputs.update()
    while (True):
       # Loop over pygame events
@@ -1044,7 +1045,7 @@ def main():
          if event.type == QUIT or Inputs.keys[pygame.K_ESCAPE]:
             pygame.quit()
             exit()
-      
+      print(Inputs.mouse_position)
       Inputs.update()
       Sprite.update_all()
       
