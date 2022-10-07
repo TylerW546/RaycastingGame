@@ -9,6 +9,7 @@ screen_height = 600
 fps = 60
 
 screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Raycasting Engine")
 ability1overlay = pygame.Surface((56, 56))
 ability2overlay = pygame.Surface((56, 56))
 health = pygame.Surface((204, 24))
@@ -17,15 +18,15 @@ ability2overlay.set_alpha(100)
 ability1overlay.set_colorkey((255,255,255))
 ability2overlay.set_colorkey((255,255,255))
 # Map info
-MAP = [[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
-      ,[2,0,0,0,0,0,0,0,0,0,0,0,0,0,2]
-      ,[2,0,0,0,0,0,0,0,0,0,2,2,2,0,2]
-      ,[2,0,0,0,2,2,0,0,0,0,2,2,2,0,2]
-      ,[2,0,0,0,2,2,0,0,0,0,0,0,0,0,2]
-      ,[2,0,0,0,2,2,0,0,0,0,0,0,0,0,2]
-      ,[2,0,0,0,0,0,0,0,0,0,0,0,0,0,2]
-      ,[2,0,0,0,0,0,0,0,0,0,0,0,0,0,2]
-      ,[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]]
+MAP = [[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1]
+      ,[2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,1,1]
+      ,[2,0,0,0,0,0,0,0,0,0,2,2,2,0,2,2,2,1,1]
+      ,[2,0,0,0,2,2,0,0,0,0,2,2,2,0,2,1,1,1,1]
+      ,[2,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,1]
+      ,[2,0,0,0,2,2,0,0,0,0,0,0,0,0,2,1,1,0,1]
+      ,[2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,1,1,0,1]
+      ,[2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,1,0,0,1]
+      ,[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1]]
 
  
 def update_rainbow(rainbow, rainbow_pos):
@@ -333,7 +334,6 @@ class Shot(Sprite):
 
 class Alien(Sprite):
    image = pygame.image.load("Alien.png").convert_alpha()
-   image.set_colorkey((255,0,0))
    Hproportion = 180000 # Proportion for height of alien
    Wproportion = Hproportion * 5/9 # Proportion of width of alien
    speed = 5
@@ -708,7 +708,7 @@ class Explosion(Sprite):
          screen.blit(self.image, (self.renderx - self.mywidth // 2, self.rendery - self.myheight // 2))
      
 class Game():
-   bulletspeed = 50
+   bulletspeed = 100
    grenspeed = 20
    smokerspeed = 20
  
@@ -767,7 +767,7 @@ class Player(Sprite):
       self.ammo = self.maxammo
    
       self.shotcool = 0
-      self.shotmaxcool = 0
+      self.shotmaxcool = 5
       self.healthSurf = pygame.Surface((204, 24))
  
    def update(self):
@@ -1045,7 +1045,7 @@ def main():
          if event.type == QUIT or Inputs.keys[pygame.K_ESCAPE]:
             pygame.quit()
             exit()
-      print(Inputs.mouse_position)
+      #print(Inputs.mouse_position)
       Inputs.update()
       Sprite.update_all()
       
